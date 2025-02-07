@@ -1,0 +1,342 @@
+---
+title: "Comparación de herramientas bioinformáticas para el análisis de datos metagenómicos"
+subtitle: "Estudios In Silico en Biomedicina"
+author: "Oleanna Guerra-Font"
+lang: es
+lightbox: true
+format:
+  html:
+    theme: pulse
+    number-sections: true
+    code-fold: true
+    toc: true
+    toc-location: left
+    embed-resources: true
+bibliography: references.bib
+smooth-scroll: true
+editor: visual
+execute: 
+  warning: false
+---
+
+```{=html}
+<style>
+body {
+text-align: justify}
+</style>
+```
+**Material suplementario**: <https://github.com/bloodyPotato13/in_silico>
+
+# Introducción
+
+## Estudios metagenómicos
+
+Los estudios metagenómicos han revolucionado el campo de la microbiología al permitir la cracterización de comunidades microbianas complejas sin la necesidad de aislar y cultivar cada especie, ya que se puede secuenciar el material genético directamente de una muestra ambiental y estudiar de allí su biodiversidad.
+
+Uno de los principales desafíos de esta rama de estudio es la generación de herramientas computacionales que logren separar y clasificar correctamente los fragmentos de ADN secuenciados. Estas pueden clasificarse en tres categorías principales:
+
+-   **Herramientas basadas en alineamiento**: Comparan las secuencias contra bases de datos de referencia mediante algoritmos de alineamiento. Pueden ser muy precisas cuando existen secuencias de referencia adecuadas, pero no lo son tanto al tratarse de organismos sin clasificación previa.
+
+    -   Ejemplo: Barrnap, BLAST.
+
+-   **Herramientas basadas en firma genómica**: Analizan los patrones de composición nucleotídica, como los k-meros o el contenido de dinucleótidos para inferir la taxonomía de las secuencias. A esta cualidad propia de las secuencias de un taxón específico se les denomina firma genómica [@delafuente2023]. Son útiles para clasificar secuencias sin referencias exactas en las bases de datos, pero su precisión se puede ver afectada por la variabilidad genética entre especies cercanas.
+
+    -   Ejemplo: métodos puramente basados en k-meros, CLARK.
+
+-   **Herramientas híbridas**: Estas combinan las estrategias anteriores en un enfoque conjunto, intentando así mejorar la sensibilidad y especificidad en la clasificación de secuencias metagenómicas. Suelen incluir modelos probabilísticos y estudios de firma genómica junto con los resultados del alineamiento.
+
+    -   Ejemplo: Kraken2, MetaPhlAn, MEGAN.
+
+Hoy en día existe una gran cantidad de herramientas para la clasificación de secuencias en estudios metagenómicos, dando lugar a un nuevo problema: saber cuál utilizar. Se debe escoger la herramienta adecuada para el estudio a realizar, y esto depende de los tipos de datos que se tienen y de la cuestión a responder por el estudio. Por otra parte, cada programa tiene un funcionamiento diferente, y solo se suelen comparar entre ellos cuando se publica una nueva herramienta. Es por todo esto que se deberían realizar más estudios comparativos entre herramientas, teniendo en cuenta unos criterios básicos a seguir para garantizar la igualdad de condiciones entre ellas.
+
+## CAMI - Critical Assessment of Metagenome Interpretation
+
+La iniciativa [CAMI](https://cami-challenge.org/about/) (que se podría traducir como "Evaluación Crítica de la Interpretación de Metagenomas") surgió en 2014 con el objetivo de crear una norma general para la evaluación de los métodos informáticos utilizados en metagenómica. Este proyecto pretende "evaluar métodos en metagenómica de forma independiente, exhaustiva y sin sesgos". Para lograrlo, han organizado hasta el momento 2 desafíos de evaluación comparativa impulsados por la comunidad, el primero el 2015 y el segundo, denominado "CAMI II", en 2019. Los resultados de estos desafíos pueden encontrarse en @sczyrba2017, @meyer2022 y en su [página web](https://cami-challenge.org/).
+
+Otro producto de esta iniciativa son los datasets sintéticos diseñados para la evaluación de herramientas metagenómicas, los cuales están publicados con libre acceso y se siguen utilizando para evaluar el funcionamiento de herramientas computacionales [@ye2019].
+
+# Materiales y métodos
+
+## Descarga de datos
+
+![Número de genomas, plásmidos, virus y otros elementos circulares en cada dataset del primer desafío de CAMI. Imagen obtenida del material suplementario de @sczyrba2017.](Screenshot%20from%202025-01-30%2012-59-23.png){#fig-CAMI_datasets fig-align="center"}
+
+El dataset utilizado proviene del proyecto CAMI. Concretamente, se utilizó el "*Low complexity Dataset*" [@https://doi.org/10.5524/100344] del primer desafío propuesto por CAMI (@fig-CAMI_datasets). Los métodos utilizados para su creación se encuentran en @sczyrba2017. Fue generado a partir de 40 genomas y 20 elementos circulares, cuya taxonomía hasta nivel de orden se puede observar en la @fig-low_comp.
+
+```{r, eval=FALSE}
+library(ggplot2)
+library(dplyr)
+library(viridis)
+
+# Load dataset
+gold_std <- read.table("suptable12.csv", header = TRUE, sep = "\t")
+gold_std$Rank <- factor(gold_std$Rank, levels = c("superkingdom", "phylum", "class", "order", "family", "genus", "species"))
+
+# Solo graficar hasta order
+gold_std <- gold_std %>%
+  filter(Rank %in% c("superkingdom", "phylum", "class", "order"))
+
+# Generar gráfica con ggplot
+low_cami <- ggplot(gold_std, aes(x=Rank, y=Percent, fill=Scientific_name)) +
+  geom_col(position = position_stack(reverse = TRUE)) +
+  geom_label(aes(label = paste0(Scientific_name, " ", Percent, "%")),
+            position = position_stack(vjust = 0.5), colour = "black", 
+            fill = "white", size = 2 ) +
+  theme_bw() +
+  labs(x = "", title = "LOW CAMI Dataset") +
+  scale_y_continuous(labels = scales::comma) +
+  theme(legend.position = "none") +
+  scale_fill_viridis(discrete = TRUE)
+
+ggsave("low_cami.png", low_cami, width = 10, height = 15, units = "cm")
+```
+
+![Composición taxonómica del dataset de baja complejidad del primer desafío de CAMI utilizado en este experimento [@https://doi.org/10.5524/100344], indicado el porcentaje incluido de cada taxón desde superreino hasta órden. Imagen creada a partir de la tabla suplementaria 12 de @sczyrba2017.](low_cami.png){#fig-low_comp fig-align="center" width="500"}
+
+Los comandos utilizados para la descarga de datos fueron los siguientes:
+
+``` bash
+# Crear un directorio específico para los datos
+[oguefont@master in_silico]$ mkdir dataset
+[oguefont@master in_silico]$ cd dataset/
+
+# Empezar una sesión interactiva (siguiendo lo aconsejado por el manual de Garnatxa)
+[oguefont@master dataset]$ interactive
+
+# Descargar los datos con wget y descomprimirlos
+[oguefont@master dataset]$ wget https://s3.ap-northeast-1.wasabisys.com/gigadb-datasets/live/pub/10.5524/100001_101000/100344/ChallengeDatasets.dir/CAMI_low.tar
+[oguefont@master dataset]$ tar -xvf CAMI_low.tar
+[oguefont@master dataset]$ rm CAMI_low.tar
+```
+
+El fichero de mayor utilidad para el experimento realizado en este informe es:
+
+-   `CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta`: Contiene todas las secuencias ensambladas en *scaffolds* siguiendo el "*Gold Standard*" de CAMI, por lo que podemos asumir una calidad de ensamblaje perfecta. En total son 19499 contigs.
+
+## Barrnap
+
+Barrnap es una herramienta cuya función es predecir la localización de genes de ARN ribosómico (rRNA) en genomas. Puede detectar la presencia de rRNA de bacterias (5S, 23S, 16S), arqueas (5S, 5.8S, 23S, 16S), mitocondrias animales (12S, 16S) y/o eucariotas (5S, 5.8S, 28S, 18S).
+
+Toma como input un fichero tipo fasta o multifasta y genera un fichero de tipo gff3 como output (@tbl-gff3). El comando utilizado en garnatxa para obtener los resultados fue el siguiente:
+
+``` bash
+barrnap --outseq metagenome_hits.fas --threads 2 
+  ../CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta > Metagenome_hits.gff
+```
+
+Al tratarse de un trabajo lanzado en el cluster de Garnatxa, este comando se encontraba integrado dentro de un script de sbatch, siguiento el mismo modelo que el utilizado con Kraken2.
+
+```{r tbl-gff3, echo=FALSE}
+#| column: page-inset-right
+library(kableExtra)
+library(dplyr)
+options(knitr.kable.NA = '')
+
+table_df <- as.data.frame(matrix("", nrow = 6, ncol = 9))
+colnames(table_df) <- c("seqid", "source", "type", "start", "end","score", "strand", "phase", "attributes")
+table_df[1,] <- c("ID of the sequence", "Name of the software or database used (Barrnap 0.9)", "Type of feature (rRNA)", "start of sequence", "end of sequence", "floating point number; the score of the feature", "+ if forward, - if reverse", "where the feature begins in reference with the ORF", "A list of features separated by ';'")
+table_df[2,] <- c("Ejemplo", NA, NA, NA, NA, NA, NA, NA, NA)
+table_df[3,] <- c("RL|S1|C10032",	"barrnap:0.9",	"rRNA",	"5452","5557",	"8.7e-15",	"-",	".",	"Name=5S_rRNA;product=5S ribosomal RNA")
+table_df[4,] <- c("RL|S1|C10560",	"barrnap:0.9",	"rRNA",	"2",	"1311",	"0",	"+",	".",	"Name=16S_rRNA;product=16S ribosomal RNA")
+table_df[5,] <- c("RL|S1|C10560",	"barrnap:0.9",	"rRNA",	"1674",	"4577",	"0",	"+",	".",	"Name=23S_rRNA;product=23S ribosomal RNA")
+table_df[6,] <- c("...", NA, NA, NA, NA, NA, NA, NA, NA)
+
+table_df %>%
+  kbl(caption = "Estructura de un fichero de tipo gff3.") %>%
+  kable_styling(bootstrap_options = "striped") %>%
+  row_spec(1, align = "c") %>%
+  row_spec(2, bold = TRUE, hline_after = TRUE)
+
+```
+
+## Kraken2
+
+Según lo describe su propio [manual](https://github.com/DerrickWood/kraken2/blob/master/docs/MANUAL.markdown), Kraken2 es un secuenciador taxonómico que examina los k-meros dentro de una secuencia, los compara con una base de datos propia y le asigna una etiqueta taxonómica a dicha secuencia [@wood2014]. La base de datos mapea k-meros al mínimo ancestro común (LCA) de todos los genomas que contengan dicho k-mero.
+
+La principal diferencia entre Kraken y Kraken2 es la compresión de la base de datos local utilizada por el programa y la adición de una *hash table*, para disminuir así la memoria RAM necesaria para el correcto funcionamiento del programa. Otros cambios y mejoras en el funcionamiento del software se encuentran descritos en @wood2019, resumido en el esquema incluido en la @fig-krakenpng. Aún así, se requieren al menos 100Gb de memoria libre para la creación de una base de datos estándar, además de alrededor de 30Gb de RAM para almacenar la *hash table*, a menos que se utilice el comando `--memory-mapping`. Por otra parte, la mayoría de las dependencias necesarias suelen venir incluidas en todos los sistemas Linux actuales.
+
+![Funcionamiento de las dos versiones de Kraken. (a) Ambas comienzan a clasificar los k-meros calculando su minimizador ℓ pb. (b) Kraken2 calcula una *hash table* compacta, que luego se utilizará para asociar el mínimo ancestro común (LCA) a cada k-mero y secuencia. En Kraken 1, se realiza una búsqueda binaria y se almacenan los datos del LCA de cada k-mero. (c) La forma de alamacenar esta información también cambia, siendo mucho menor en Kraken2 comparado con su programa antecesor. Figura obtenida de @wood2019.](kraken1vs2.png){#fig-krakenpng fig-align="center"}
+
+### Creación de la base de datos
+
+Creamos una base de datos standard en Garnatxa utilizando el script detallado a continuación. El tiempo de ejecución fue de aproximadamente media hora, utilizando 32 hilos en Garnatxa ([*Hardware specifications* del clúster](https://garnatxadoc.uv.es/hardware_specifications/hardware_specifications.html)).
+
+``` bash
+[oguefont@master Kraken2_dir]$ cat build.sbatch 
+#!/bin/bash
+#SBATCH --job-name=kraken-builds
+#SBATCH --qos=short
+#SBATCH --cpus-per-task=32
+#SBATCH --mem=200gb
+#SBATCH --time=1-00:00:00
+#SBATCH --output=kraken-builds_%j.out
+#SBATCH -e kraken-builds_%j.err
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=oleanna.guerra@uv.es
+
+module load anaconda
+conda activate nudis_cont
+
+#GENERAR BASE DE DATOS KRAKEN
+kraken2-build --standard --db standard_db --threads 32
+
+#CLEAN ARCHIVOS INTERMEDIOS
+kraken2-build --db standard_db --clean
+
+exit 0
+```
+
+### Clasificación de secuencias
+
+Posteriormente, para realizar los análisis se utilizó el comando indicado a continuación, también integrado en un script en Garnatxa para respetar correctamente sus normas de uso en el sistema de trabajos.
+
+``` bash
+kraken2 --db ~/Kraken2_dir/standard_db --threads 32 --memory-mapping \
+--report kraken.txt ../CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta
+```
+
+Donde:
+
+-   `--db` Indica la ubicación de la base de datos anteriormente descargada, que en nuestro caso se encuentra en \~/Kraken2_dir/standard_db
+-   `--threads 32` Indica el uso de 32 hilos para el análisis de las secuencias
+-   `--memory-mapping` Evita que se cargue toda la base de datos a RAM, para disminuir la memoria necesaria para el análisis
+-   `--report kraken.txt` Guardará los resultados en un archivo de texto cuya estructura se explicará posteriormente
+-   Por último, se indica el fichero fasta a analizar, en nuestro caso llamado "CAMI_low_RL_S001\_\_insert_270_GoldStandardAssembly.fasta"
+
+El tiempo de ejecución fue de tres horas y 55 minutos, utilizando 32 hilos en Garnatxa. Este comando genera dos tipos de output. El primero, denominado "estándar", genera una línea de texto de cinco secciones delimitados por tabuladores por cada secuencia analizada:
+
+1.  "**C**" o "**U**", dependiendo si la secuencia ha sido o no clasificada.
+2.  Un identificador de la secuencia (**seqid**), obtenido del header FASTA.
+3.  El **taxid** asignado por Kraken2 a la secuencia (0 si no fue clasificada).
+4.  **Longitud de la secuencia** en pares de bases. En caso de secuencias *paired*, la longitud de cada una está delimitada por un "\|".
+5.  Una lista separada por espacios indicando a qué LCA se ha mapeado cada uno de los k-meros de la secuencia (**LCA_hitlist**).
+
+El otro tipo de output, generado al incluir el comando `--report`, contiene una línea por taxón, con seis secciones también delimitadas por tabuladores:
+
+1.  El porcentaje de fragmentos asignados a este taxón.
+2.  El número de fragmentos del clado incluidos en este taxón.
+3.  El número de fragmentos asignados directamente a este taxón.
+4.  Código que indica el rango del taxón: Sin clasificar (**U**), Raíz (**R**), Dominio (**D**), Reino (**K**), Phylum (**P**), Clase (**C**), Orden (**O**), Familia (**F**), Género (**G**) o Especie (**S**).
+5.  Código de identificación de la base de datos de NCBI.
+6.  Nombre científico indentado del taxón.
+
+## KrakenTools
+
+KrakenTools es un conjunto de scripts creados para ser integrados en los protocolos junto con los programas relacionados con Kraken, para facilitar su uso [@lu2022]. Todos los programas generados con este propósito pueden encontrarse en [su repositorio de Github](https://github.com/jenniferlu717/KrakenTools).
+
+El programa que será utilizado en el presente estudio es el contenido en `kreport2krona.py`. Su función principal es la de convertir el output de tipo *report* de Kraken a un archivo compatible con Krona [@ondov2011].
+
+A partir del fichero generado, se crearon ficheros html con representaciones gráficas de los resultados obtenidos por Kraken2. Para ello, se instaló el programa KronaTools por medio de conda y se utilizó el siguiente comando en Garnatxa:
+
+``` bash
+perl /home/oguefont/.conda/envs/nudis_cont/opt/krona/scripts/ImportText.pl \
+  -o kraken2results.html kraken.txt
+```
+
+El fichero resultante, denominado `kraken2results.html` se encuentra en el material suplementario de este informe.
+
+# Resultados
+
+## Barrnap
+
+Después de obtener los datos en bruto (@tbl-BRNPrawdata), se extrajeron los resultados de importancia con `barrnap.py` (programa incluido en el material suplementario), obteniendo así el tipo y cantidad de rRNA encontrado en cada uno de los contigs de la muestra metagenómica.
+
+```{r tbl-BRNPrawdata}
+#| tbl-cap: Datos en bruto obtenidos por el programa Barrnap
+#| column: page-inset-right
+df_barrnap <- read.table("Metagenome_hits.gff", header = FALSE, sep = "\t")
+colnames(df_barrnap) <- c("seqid", "source", "type", "start", "end","score", "strand", "phase", "attributes")
+DT::datatable(df_barrnap, options = list(pageLength = 5))
+```
+
+Como puede observarse en la @fig-barrnapRes, tan solo el 0.72% de los contigs fueron marcados por Barrnap por contener las secuencias de rRNA de interés (140 de 19499). Dentro de estos contigs, 112 contienen rRNA de tipo 5S, 52 de tipo 16S y 38 de tipo 23S. Si este se tratase de un estudio de la microbiota de, por ejemplo, un entorno marino o del intestino humano, solo se podría decir con seguridad que 90 contigs de 19499 probablemente provengan de organismos procariotas o arqueas. En el caso de la muestra utilizada, sabiendo que más del 99% de las secuencias provienen de bacterias, se trata de un porcentaje muy pequeño del total.
+
+![(A) Cantidad total de rRNA encontrado por Barrnap en el metagenome estudiado, coloreado según el tipo de rRNA (5S, 16S o 23S). (B) Porcentaje de contigs detectado por Barrnap vs. el porcentaje no detectado (Total de contigs = 19499).](fig_barrnap_results.png){#fig-barrnapRes}
+
+```{r, eval=FALSE, echo=FALSE}
+#| label: fig-rrnaCount
+#| fig-cap: Cantidad total de rRNA encontrado por Barrnap en el metagenome estudiado, coloreado según el tipo de rRNA (5S, 16S o 23S).
+library(ggplot2)
+
+# Cargar datos
+df_barrnap <- read.table("Barrnap.tsv", header = TRUE, sep = "\t")
+df_barrnap$rna_type <- factor(df_barrnap$rna_type, levels = c("5S_rRNA", "16S_rRNA", "23S_rRNA"))
+
+# Crear ggplot con la cantidad de rRNA encontrado para cada tipo
+gg_bar <- ggplot(df_barrnap, aes(x=rna_type, fill=rna_type)) +
+  geom_bar(aes(x=rna_type)) + 
+  scale_y_continuous(n.breaks = 6) +
+  theme_bw() +
+  labs(y = "Count", x = "", title = "rRNA found in metagenome") +
+  scale_fill_manual(values = c("#80d0c9", "#8a109e", "#ff8300")) +
+  stat_count(geom = "text", colour = "black", size = 3.5, 
+             aes(label = ..count..),position=position_stack(vjust=0.5))
+
+
+ggsave("barrbars.png", gg_bar)
+
+total_barrnap <- data.frame(
+  Contigs=c("Barrnap", "Total"),
+  Conteo=c(as.numeric(length(unique(df_barrnap$seqid))), as.numeric("19499")),
+  Porcent=c(length(unique(df_barrnap$seqid))*100/19499, 
+            100 - length(unique(df_barrnap$seqid))*100/19499)
+)
+
+gg_pie <- ggplot(total_barrnap, aes(x="", y=Porcent, fill=Contigs)) +
+  geom_bar(stat="identity", width=1) +
+  coord_polar("y", start=0) +
+  theme_void() +
+  scale_fill_manual(values = c("#8a109e","#8ad0c9")) 
+
+ggsave("gg_pie.png", gg_pie)
+```
+
+## Kraken2
+
+El output estándar obtenido se encuentra en el fichero denominado `kraken_metagenome.out`, y el generado por el comando `--report` se encuentra en `kraken.txt` (incluidos en el material suplementario). A partir de este último se generó la @tbl-K2rawdata, donde se pueden inspeccionar y filtrar por cualquiera de sus secciones. Las primeras líneas de cada uno de estos ficheros, tal como se obtienen de Kraken2 pueden observarse a continuación:
+
+``` bash
+[oguefont@master Kraken2_dir]$ head -5 kraken_metagenome.out 
+C   RL|S1|C0    416169  809 0:32 75309:5 2778082:1 75309:2 2778082:6 2:2 2778082:6 1236:4 2778082:5 0:10 242605:2 1775411:9 416169:1 1775411:2 135614:5 1224:9 416169:12 0:3 416169:2 135614:5 0:9 135614:3 40323:4 0:1 1775411:9 0:14 666685:2 0:5 666685:8 0:7 666685:1 0:18 2501295:5 75309:8 2898793:5 0:5 75309:1 0:1 1775411:3 2898793:11 1775411:3 2898793:4 1775411:8 666685:5 1775411:8 75309:1 1775411:22 75309:3 1775411:4 1236:4 1224:2 135614:5 75309:28 666685:1 75309:16 0:34 3158582:2 135614:5 3158582:2 2621553:2 416169:5 0:6 56459:2 338:5 0:2 75309:5 416169:2 75309:2 416169:5 75309:22 2:2 1236:8 0:6 1236:5 767434:8 0:1 135614:1 0:10 75309:1 1775411:8 75309:2 666685:3 75309:8 0:23 416169:5 75309:1 666685:1 0:19 1775411:1 0:34 75309:1 0:4 2621553:2 2:5 2621553:1 3158582:3 2621553:5 0:6 3158582:3 0:1 3158582:1 0:20 1775411:4 75309:3 135614:2 75309:7 0:7 75309:4 0:6 416169:5 0:12 416169:5 75309:4 0:6 1224:8 149698:5 281362:3 0:5 1224:1 0:1 666685:4 0:2 1760:5 0:14 416169:3 0:2
+C   RL|S1|C1    592029  626 592029:5 49546:4 592029:6 49546:8 592029:3 49546:3 363408:5 592029:63 49546:3 592029:75 49546:15 592029:1 976:5 49546:17 592029:1 49546:5 592029:60 49546:31 592029:5 49546:1 592029:1 49546:1 592029:174 976:5 592029:93 49546:2
+C   RL|S1|C2    2785025 9870    0:2460 286:5 0:677 319653:3 0:74 1239:1 0:62 29358:5 0:705 1485:5 0:207 2:6 0:264 79883:5 0:1413 1050370:3 0:723 536227:3 0:1637 9606:5 0:43 2837504:1 0:1011 3070215:3 0:71 537007:4 0:58 186817:1 0:3 1239:15 2785025:12 186801:3 2785025:5 186803:32 0:1 186803:9 186801:6 1512:1 0:6 186801:5 0:170 2070463:1 0:37 1796616:3 0:42 1796616:7 0:23
+C   RL|S1|C3    2660641 950 0:3 2765360:5 149698:5 0:26 80840:2 0:5 2895353:5 2:4 2895353:4 2660641:3 0:10 2895353:5 3048606:2 75682:5 2:4 1224:1 2:1 131567:2 2:5 131567:3 80840:3 1760:1 0:8 2:6 0:1 1224:5 0:5 407217:3 0:30 75682:3 0:7 2660641:2 0:32 1710540:3 0:12 2738142:1 1224:10 32033:1 1224:6 2:9 1224:6 31988:5 0:4 80840:1 75682:3 1224:1 0:4 75682:5 80840:3 2609279:1 80840:2 0:4 2660641:5 80840:1 2660641:3 0:68 1522432:5 871742:5 2895353:3 871742:5 0:11 75682:1 2:1 0:5 286:5 0:1 1224:12 2897332:1 75682:5 1224:4 2:1 0:7 80864:1 0:7 28216:2 80840:2 28216:12 1224:3 28216:1 1224:5 2:3 1224:3 2675878:1 2983235:3 28216:5 1771309:1 3230488:3 0:37 457921:3 0:3 2895353:3 75682:1 2895353:3 75682:3 1522432:3 75682:14 80840:5 0:4 222:2 0:5 80840:1 2995154:3 0:7 298653:2 0:3 2895353:13 321985:5 75682:5 3065910:4 0:42 2914710:4 0:150 56688:5 2895353:1 0:49 2917724:4 0:35 329:7 80840:2
+C   RL|S1|C4    84566   820 0:282 2027860:2 0:162 3112958:2 0:338
+
+[oguefont@master Kraken2_dir]$ head kraken.txt 
+ 20.98  4090    4090    U   0   unclassified
+ 79.02  15409   1   R   1   root
+ 79.01  15406   56  R1  131567    cellular organisms
+ 78.33  15273   317 D   2       Bacteria
+ 42.59  8305    62  P   1224          Pseudomonadota
+ 25.82  5035    26  C   1236            Gammaproteobacteria
+ 24.11  4702    13  O   135614            Lysobacterales
+ 22.77  4439    22  F   1775411             Rhodanobacteraceae
+ 22.00  4290    127 G   75309                 Rhodanobacter
+ 10.56  2059    2059    S   416169                  Rhodanobacter thiooxydans
+```
+
+Analizando la @tbl-K2rawdata, se puede observar que el 79.02% de las secuencias han sido clasificadas, dejando el 20.98% sin clasificar.
+
+```{r tbl-K2rawdata}
+#| tbl-cap: Datos en bruto obtenidos por el programa Kraken2
+#| column: page-inset-right
+
+df_kraken <- read.table("kraken.txt", header = FALSE, sep = "\t")
+colnames(df_kraken) <- c("Porcentaje", "Nº de fragmentos del clado", "Nº de fragmentos del taxón", "Rango", "ID del NCBI", "Nombre científico")
+DT::datatable(df_kraken, filter = "top", options = list(pageLength = 10))
+```
+
+Analizando los resultados más detalladamente (`kraken2results.html`, @fig-krona), el 79% del material genético identificado pertenece a bacterias, el 0.3% a humanos, el 0.05% a arqueas y el 0.01% a virus. Además, viendo específicamente las bacterias identificadas, los resultados son similares a lo esperado (@fig-low_comp), especialmente a nivel de clase.
+
+![Resultados de Kraken2 graficados por Krona. (A) Proporciones de todo lo obtenido por Kraken2, incluyendo lo no clasificado. (B) Clasificación taxonómica de las bacterias identificadas desde superreino a órden. Capturas tomadas del fichero `kraken2results.html` incluido en el material suplementario.](krona_alto.png){#fig-krona}
+
+# Conclusiones
+
+El análisis realizado con el dataset sintético del proyecto CAMI ha permitido comparar el desempeño de las herramientas Barrnap y Kraken2 en la clasificación de secuencias metagenómicas. Los resultados obtenidos indican que Kraken2 es más eficiente en la identificación de una mayor cantidad de organismos en comparación con Barrnap. Sin embargo, la selección de la herramienta adecuada depende siempre del tipo de estudio que se desea realizar.
+
+Barrnap se destaca en, por ejemplo, estudios de contaminación bacteriana en ensamblajes de genomas animales, donde su capacidad para detectar distintos tipos de rRNA es particularmente útil. Por otro lado, Kraken2 es más eficaz en la identificación de organismos en muestras metagenómicas, siempre y cuando estos se encuentren representados en las bases de datos de referencia.
+
+En general, la elección de una herramienta para el análisis metagenómico debe considerar la naturaleza de la muestra, los objetivos del estudio y las limitaciones de cada método. La combinación de diferentes herramientas y enfoques podría ofrecer un análisis más robusto y preciso en estudios futuros. Así, el avance continuo en metodologías computacionales, la optimización de bases de datos y la realización de estudios de *benchmarking* contribuyen al avance y la mejoría de los estudios metagenómicos en diversas ramas de estudios médicos y biológicos.
+
+# Referencias
