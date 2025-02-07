@@ -1,0 +1,94 @@
+Dataset	Rank	Scientific_name	Percent
+low	superkingdom	Bacteria	99.0840
+low	superkingdom	Viruses	0.1187
+low	phylum	Actinobacteria	12.4485
+low	phylum	Bacteroidetes	16.4655
+low	phylum	Chloroflexi	8.8558
+low	phylum	Firmicutes	23.5174
+low	phylum	Proteobacteria	31.7823
+low	phylum	Tenericutes	6.0145
+low	class	Actinobacteria	12.4485
+low	class	Alphaproteobacteria	7.0848
+low	class	Bacilli	6.3954
+low	class	Betaproteobacteria	13.2379
+low	class	Clostridia	0.7513
+low	class	Deltaproteobacteria	2.6899
+low	class	Flavobacteriia	0.0834
+low	class	Gammaproteobacteria	8.7697
+low	class	Ktedonobacteria	8.8558
+low	class	Mollicutes	6.0145
+low	class	Negativicutes	16.3707
+low	class	Sphingobacteriia	16.3821
+low	order	Actinomycetales	12.4485
+low	order	Anaeroplasmatales	6.0145
+low	order	Bacillales	6.3954
+low	order	Burkholderiales	12.5631
+low	order	Clostridiales	0.7513
+low	order	Desulfobacterales	2.6899
+low	order	Flavobacteriales	0.0834
+low	order	Ktedonobacterales	8.8558
+low	order	Neisseriales	0.6748
+low	order	Pseudomonadales	8.2830
+low	order	Rhodobacterales	7.0848
+low	order	Selenomonadales	16.3707
+low	order	Sphingobacteriales	16.3821
+low	order	Xanthomonadales	0.4867
+low	family	Anaeroplasmataceae	6.0145
+low	family	Chitinophagaceae	16.3821
+low	family	Chromobacteriaceae	0.6748
+low	family	Clostridiaceae	0.2931
+low	family	Comamonadaceae	0.2449
+low	family	Desulfobacteraceae	2.6899
+low	family	Flavobacteriaceae	0.0834
+low	family	Intrasporangiaceae	11.3310
+low	family	Oxalobacteraceae	12.3182
+low	family	Peptostreptococcaceae	0.3835
+low	family	Proteinivoraceae	0.0747
+low	family	Pseudomonadaceae	8.2830
+low	family	Rhodobacteraceae	7.0848
+low	family	Thermosporotrichaceae	8.8558
+low	family	Veillonellaceae	16.3707
+low	family	Xanthomonadaceae	0.4867
+low	genus	Albidovulum	0.3019
+low	genus	Anaerobranca	0.0747
+low	genus	Anaeroplasma	6.0145
+low	genus	Anaerosporobacter	0.1481
+low	genus	Andreprevotia	0.6748
+low	genus	Clostridium	0.1449
+low	genus	Defluviimonas	2.6994
+low	genus	Desulfatibacillum	2.6899
+low	genus	Flavisolibacter	1.8617
+low	genus	Hydrotalea	14.5204
+low	genus	Janthinobacterium	12.3182
+low	genus	Lampropedia	0.2449
+low	genus	Lysobacter	0.2364
+low	genus	Nonlabens	0.0834
+low	genus	Paracoccus	4.0835
+low	genus	Pseudomonas	8.2830
+low	genus	Rhodanobacter	0.0347
+low	genus	Schwartzia	16.3707
+low	genus	Tepidibacter	0.3835
+low	genus	Tetrasphaera	11.3310
+low	genus	Thermosporothrix	8.8558
+low	genus	Xylella	0.2156
+low	species	Albidovulum xiamenense	0.3019
+low	species	Anaerobranca californiensis	0.0747
+low	species	Anaeroplasma bactoclasticum	6.0145
+low	species	Anaerosporobacter mobilis	0.1481
+low	species	Andreprevotia lacus	0.6748
+low	species	Clostridium caminithermale	0.1449
+low	species	Defluviimonas denitrificans	2.6994
+low	species	Desulfatibacillum alkenivorans	2.6899
+low	species	Flavisolibacter ginsengisoli	0.7005
+low	species	Flavisolibacter ginsengiterrae	1.1612
+low	species	Hydrotalea sandarakina	14.5204
+low	species	Lampropedia hyalina	0.2449
+low	species	Lysobacter oryzae	0.2364
+low	species	Nonlabens dokdonensis	0.0834
+low	species	Paracoccus denitrificans	4.0835
+low	species	Pseudomonas aeruginosa	8.2830
+low	species	Schwartzia succinivorans	16.3707
+low	species	Tepidibacter formicigenes	0.3835
+low	species	Tetrasphaera duodecadis	11.3310
+low	species	Thermosporothrix hazakensis	8.8558
+low	species	Xylella fastidiosa	0.2156
